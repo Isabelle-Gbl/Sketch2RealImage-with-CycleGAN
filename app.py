@@ -1,21 +1,14 @@
 from interaction.helpers import *
 
+# Flask application with WebSocket support for real-time interaction.
+# Handles image processing, model execution, and collaborative drawing.
 
 
-
-# Setup-Funktion einmal beim Start der App ausführen
-# Define directories for image storage
+# Initialize Flask app and WebSocket support
 cwd = os.getcwd()
-
+models_copied = copy_all_models_once()
 app = Flask(__name__,template_folder="interaction/templates")
 socketio = SocketIO(app, cors_allowed_origins="*")
-
-
-
-
-
-
-
 
 @app.route('/get_models', methods=['GET'])
 def get_models():
@@ -27,7 +20,6 @@ def get_models():
 def index():
     """Renders the main HTML page."""
     return render_template('index.html')
-
 
 @app.route('/save_image', methods=['POST'])
 def save_image():
@@ -54,8 +46,6 @@ def save_image():
        
         return jsonify({"error": str(e)}), 400
 
-
-
 @app.route('/get_image/<image_name>')
 def get_image(image_name):
     """Serves images from different directories."""
@@ -70,11 +60,7 @@ def get_image(image_name):
     return jsonify({"error": "Image not found."}), 404
 
 
-
-
-
-
-# WebSocket Events
+# WebSocket Events for real-time drawing collaboration
 connected_clients = set()
 
 @socketio.on('connect')

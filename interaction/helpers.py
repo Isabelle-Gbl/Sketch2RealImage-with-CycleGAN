@@ -7,66 +7,80 @@ from PIL import Image
 import subprocess
 import numpy as np
 import shutil
+import torch
 
+
+#-----------------------------------------------------app preparation------------------------------
+
+# Variable to ensure models are copied only once
+models_copied = False  
 
 repo_dir = os.path.abspath("Orginal_CycleGAN_Repository")
 interaction_dir = os.path.abspath("interaction")
 
-# 🔹 Variablen für die Pfade in der App
-input_image_path_app = os.path.join(interaction_dir, "images", "input", "input.png")
+# Paths for application images
+input_path_app = os.path.join(interaction_dir, "images", "input")
+upload_path_app = os.path.join(interaction_dir, "images", "upload")
+input_image_path_app = os.path.join(input_path_app, "input.png")
 output_image_path_app = os.path.join(interaction_dir, "images", "all_images")
-upload_image_path_app = os.path.join(interaction_dir, "images", "upload", "upload.png")
+upload_image_path_app = os.path.join(upload_path_app, "upload.png")
 
-# 🔹 Variablen für die Pfade im Repository
+# Paths for repository images
 input_image_path_repo = os.path.join(repo_dir, "datasets", "SketchPad", "testA", "input.png")
 model_target = os.path.join(repo_dir, "checkpoints", "SketchPad")
 output_image_path_repo = os.path.join(repo_dir, "results/SketchPad/test_latest/images")
 
-
+# Ensure necessary directories exist
+os.makedirs(input_path_app, exist_ok=True)
+os.makedirs(output_image_path_app, exist_ok=True)
+os.makedirs(upload_path_app, exist_ok=True)
 os.makedirs(model_target, exist_ok=True)
 
-def copy_selected_model(model_name):
-    """Kopiert das ausgewählte Modell aus interaction/models/ nach SketchPad/."""
-    repo_dir = os.path.abspath("Orginal_CycleGAN_Repository")
-    interaction_dir = os.path.abspath("interaction")
-    
-    model_target = os.path.join(repo_dir, "checkpoints", "SketchPad")
-    model_source = os.path.join(interaction_dir, "models", model_name)  # Ausgewähltes Modell
-    
-    if not os.path.exists(model_source):
-        print(f"FEHLER: Das Modell '{model_name}' existiert nicht in {model_source}")
-        return False
-    
-    # Ordner vorher leeren
-    shutil.rmtree(model_target)
-    os.makedirs(model_target, exist_ok=True)
 
-    # Dateien aus dem gewählten Modell kopieren (ohne den übergeordneten Ordner)
+
+def copy_all_models_once():
+    """Copies all models from 'interaction/models/' to 'checkpoints/SketchPad/' once."""
+    global models_copied
+
+    if models_copied:
+        return  # Models already copied
+
+    model_source = os.path.join(interaction_dir, "models") 
+
+    if not os.path.exists(model_source):
+        print(f"ERROR: Model directory {model_source} does not exist.")
+        return False
+
+
+    # Copy all models
     for file in os.listdir(model_source):
         shutil.copy(os.path.join(model_source, file), model_target)
 
-    print(f"Modell '{model_name}' kopiert nach {model_target}")
+    models_copied = True   # Prevent multiple copies
     return True
 
+
 def get_available_models():
-    """
-    Ruft die Namen aller verfügbaren Modelle aus dem SketchPad-Verzeichnis ab.
-    Ein Modell wird erkannt, wenn in seinem Ordner eine Datei "latest_net_G.pth" existiert.
-    """
-    model_dir = "interaction/models"
-    
+    """Returns a list of available models based on filenames."""
+    model_dir = os.path.abspath("Orginal_CycleGAN_Repository/checkpoints/SketchPad")
+
     if not os.path.exists(model_dir):
         return ["No models found"]
-    
-    available_models = []
-    for folder in os.listdir(model_dir):
-        folder_path = os.path.join(model_dir, folder)
-        model_path = os.path.join(folder_path, "latest_net_G.pth")
 
-        if os.path.isdir(folder_path) and os.path.exists(model_path):
-            available_models.append(folder)
+    available_models = [
+        file.replace("_net_G.pth", "") for file in os.listdir(model_dir) if file.endswith("_net_G.pth")
+    ]
 
     return available_models if available_models else ["No models found"]
+
+
+
+#-----------------------------------------------------image preparation------------------------------
+def get_next_image_number(output_image_path_app):
+    """Finds the next available number for saving output images."""
+    existing_numbers = [int(f.split("_")[0]) for f in os.listdir(output_image_path_app) 
+                        if f.endswith("_real.png") and f.split("_")[0].isdigit()]
+    return max(existing_numbers, default=0) + 1
 
 
 # image transformation
@@ -80,11 +94,7 @@ def ensure_white_background(image):
     
 
 def find_bounds(image):
-    """
-    Finds the bounding box of non-white pixels in an image and crops it.
-    Returns:
-        Cropped version of the image or None if no content is found.
-    """
+    """Ensures that the image has a white background if transparency exists."""
     img_array = np.asarray(image)
 
     if image.mode != "RGBA":
@@ -106,6 +116,7 @@ def find_bounds(image):
     cropped_img = image.crop((left, top, right + 1, bottom + 1))
     return cropped_img
 
+
 def process_image(image):
     """Processes the image by cropping content, resizing, and placing it on a white 250x250 background."""
     cropped_img = find_bounds(image)
@@ -123,16 +134,7 @@ def process_image(image):
 
 
 def convert_image_to_black_white_dynamic(image):
-    """
-    Converts a PIL image to pure black and white based on a dynamically determined threshold.
-    The threshold is set as the midpoint between the minimum and maximum pixel values.
-    
-    Parameters:
-        image (PIL.Image): Input image in RGB format.
-    
-    Returns:
-        PIL.Image: Binarized black and white image.
-    """
+    """Converts an image to black and white using a dynamically determined threshold."""
     image = image.convert("L")  # Convert to grayscale
     image_array = np.array(image)
 
@@ -143,68 +145,73 @@ def convert_image_to_black_white_dynamic(image):
     # Convert back to PIL image
     return Image.fromarray(binary_image_array)
 
-
-
-
-
 def process_and_save_image(image):
-    """Processes and saves an image for input/output."""
+    """Processes an image by cropping, resizing, and centering on a white background."""
     processed_img = process_image(image)
     processed_img = convert_image_to_black_white_dynamic(processed_img)
     processed_img.save(input_image_path_app)
     
 
 
+#-----------------------------------------------------calling the model for transformation-----------------------------
 
-def get_next_image_number(output_image_path_app):
-    """Findet die nächste verfügbare Nummer für das Speichern der Ausgabe-Bilder."""
-    existing_numbers = [int(f.split("_")[0]) for f in os.listdir(output_image_path_app) 
-                        if f.endswith("_real.png") and f.split("_")[0].isdigit()]
-    return max(existing_numbers, default=0) + 1
+def rename_model(model_name):
+    """Returns a list of available models based on filenames."""
+    model_dir = os.path.abspath("Orginal_CycleGAN_Repository/checkpoints/SketchPad")
+    
+    latest_model = os.path.join(model_dir, "latest_net_G.pth")
+    new_model = os.path.join(model_dir, f"{model_name}_net_G.pth")
+
+    # Falls es bereits ein latest_net_G.pth gibt, benenne es zurück
+    if os.path.exists(latest_model):
+        os.rename(latest_model,new_model)
+
+    # Jetzt das neue Modell als latest_net_G.pth setzen
+    else:
+        try:
+            os.rename(new_model,latest_model)
+            print(f"{model_name}_net_G.pth wurde zu latest_net_G.pth umbenannt.")
+        except:
+            print(f"FEHLER: Datei {model_name}_net_G.pth nicht gefunden.")
+
 
 def run_model(model_name):
-    """Hauptfunktion, die das Modell ausführt und die Bilder speichert."""
-    # 1️⃣ Sicherstellen, dass die Zielordner existieren
-    copy_selected_model(model_name)
+    """Runs the selected model and saves the generated images."""
     os.makedirs(os.path.dirname(input_image_path_repo), exist_ok=True)
-    
-    # 2️⃣ Input-Bild ins Repository kopieren
     shutil.copy(input_image_path_app, input_image_path_repo)
-    # print(f"Input-Bild kopiert: {input_image_path_app} -> {input_image_path_repo}")
+    gpu_ids = "0" if torch.cuda.is_available() else "-1"  # GPU or CPU
 
-    # 3️⃣ Modell starten
+
+    rename_model(model_name)
+    
+    # call test.py in the repository
     command = [
-        "python", "test.py",
-        "--dataroot", "datasets/SketchPad",
-        "--name", "SketchPad",
-        "--model", "test",
-        "--no_dropout"
+    "python", "test.py",
+    "--dataroot", "datasets/SketchPad",
+    "--name", "SketchPad",
+    "--model", "test",
+    "--no_dropout",
+    "--gpu_ids", gpu_ids,
     ]
-    print("Starte Modell mit Befehl:", " ".join(command))
+
+    print("Starting model with command:", " ".join(command))
     subprocess.run(command, cwd=repo_dir)
 
-    # # 4️⃣ Ergebnisse aus dem Modell holen
-    # if not os.path.exists(output_image_path_repo):
-    #     print(f"FEHLER: Modell-Ergebnisordner existiert nicht: {output_image_path_repo}")
-    #     return
-    
-    next_image_number = get_next_image_number(output_image_path_app)
+    rename_model(model_name)
 
+    next_image_number = get_next_image_number(output_image_path_app)
     for file in os.listdir(output_image_path_repo):
         if file.endswith("_real.png"):
             new_name = f"{next_image_number}_real.png"
         elif file.endswith("_fake.png"):
             new_name = f"{next_image_number}_fake.png"
-            shutil.copy(os.path.join(output_image_path_repo, file), upload_image_path_app)  # Upload-Bild speichern
+            shutil.copy(os.path.join(output_image_path_repo, file), upload_image_path_app)
             print(f"Fake-Bild gespeichert als Upload: {upload_image_path_app}")
         else:
             continue
         
         shutil.copy(os.path.join(output_image_path_repo, file), os.path.join(output_image_path_app, new_name))
-        print(f"Ergebnis gespeichert: {file} -> {new_name}")
 
-    # 5️⃣ Aufräumen: Ergebnisse & Input aus dem Repository löschen
+    # remove all files to prepare folders for next transformation
     shutil.rmtree(os.path.join(repo_dir, "results", model_name), ignore_errors=True)
     shutil.rmtree(os.path.dirname(input_image_path_repo), ignore_errors=True)
-    # print(f"Aufgeräumt: {output_image_path_repo} & {input_image_path_repo}")
-
