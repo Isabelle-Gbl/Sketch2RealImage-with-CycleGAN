@@ -15,7 +15,7 @@ It systematically loads different model checkpoints, runs inference using the `t
 ## Usage:
 Run the script from the command line:
 
-    python evaluate_models.py <motive_name> <testset> <model_folder> <generator>
+    python evaluate.py <motive_name> <testset> <model_folder> <generator>
     
 
 ### Parameters:
@@ -25,7 +25,7 @@ Run the script from the command line:
 - `<generator>`: Which generator to evaluate (`"G_A"` or `"G_B"`).
 
 ### Example:
-    python evaluate_models.py car A car_cyclegan G_A
+    python evaluate.py car A car_cyclegan G_A
 
 This will:
 - Find all `*_net_G_A.pth` models in `checkpoints/car_cyclegan`
