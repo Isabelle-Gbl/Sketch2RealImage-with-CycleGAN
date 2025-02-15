@@ -12,7 +12,7 @@ The processed images are intended for training a CycleGAN model.
 ## Usage:
 Run the script from the command line with the following parameters:
 
-    python script.py <class_name> <image_count> --root_path <root_path>
+    python prepare_ndjson.py <class_name> <image_count> --root_path <root_path>
 
 ### Parameters:
 - `<class_name>`: Name of the class folder (e.g., `"car"` for car sketches).
@@ -20,7 +20,7 @@ Run the script from the command line with the following parameters:
 - `--root_path`: (Optional) Path to the dataset directory. Defaults to `Orginal_CycleGAN_Repository/datasets`.
 
 ### Example:
-    python script.py car 4000 --root_path /path/to/datasets
+    python prepare_ndjson.py car 4000 --root_path /path/to/datasets
 
 This processes 4000 car sketches from `/path/to/datasets/car/*.ndjson` and saves the images in `/path/to/datasets/car/trainA`.
 
