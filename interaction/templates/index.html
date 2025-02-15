@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sketch Pad</title>
+    <style>
+        body {
+            background-color: rgb(250, 250, 230);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: rgb(107, 142, 35);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .dropdown-container {
+            background-color: rgb(235, 245, 225);
+            border: 1px solid rgb(107, 142, 35);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .dropdown-container h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .canvas-container {
+            text-align: center;
+        }
+
+        .canvas-container canvas {
+            background-color: white;
+            border: 2px solid rgb(107, 142, 35);
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin-top: 20px;
+        }
+
+        .image-container img {
+            border: 1px solid rgb(107, 142, 35);
+            width: 40%;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        button {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: rgb(107, 142, 35);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: rgb(85, 120, 25);
+        }
+
+        button:disabled {
+            background-color: rgb(180, 180, 180);
+            cursor: not-allowed;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+    <header>Sketch Pad</header>
+
+    <div class="dropdown-container">
+        <h3>Select the object you want to transform your drawing into:</h3>
+        <select id="selectionDropdown"></select>
+    </div>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="drawingCanvas" width="1500" height="700"></canvas>
+        </div>
+
+        <div class="button-container">
+            <button id="resetButton">Reset Drawing</button>
+            <button id="saveButton">Save and Transform</button>
+        </div>
+
+        <div class="image-container">
+            <img id="inputImage" src="interaction/images/input/input.png" alt="Draw and click Save and Transform">
+            <img id="outputImage" src="interaction/images/output/upload.png" alt="Draw and click Save and Transform">
+        </div>
+    </div>
+
+
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        let painting = false;
+
+        // Start a new drawing path
+        function startPath(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            socket.emit('start_new_path', { x, y });
+        }
+        
+        // Draw on the canvas while the user is moving the mouse or touching
+        function draw(e) {
+            if (!painting) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            socket.emit('draw_data', { x, y });
+        }
+
+        // Event listeners for drawing
+        canvas.addEventListener('mousedown', (e) => { painting = true; startPath(e); });
+        canvas.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchstart', (e) => { painting = true; startPath(e); e.preventDefault(); });
+        canvas.addEventListener('touchend', () => { painting = false; ctx.beginPath(); });
+        canvas.addEventListener('touchmove', draw);
+
+        // Update canvas from server
+        socket.on('new_path', (data) => { ctx.beginPath(); ctx.moveTo(data.x, data.y); });
+        socket.on('update_canvas', (data) => { ctx.lineTo(data.x, data.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(data.x, data.y); });
+        socket.on('clear_canvas', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); });
+
+        // Reset the canvas
+        document.getElementById('resetButton').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            socket.emit('reset_canvas');
+        });
+
+        // Save the drawing and request transformation
+        document.getElementById('saveButton').addEventListener('click', async () => {
+            const saveButton = document.getElementById('saveButton');
+            saveButton.disabled = true;
+            const model_selction = document.getElementById('selectionDropdown').value;
+            const dataURL = canvas.toDataURL();
+            
+            const response = await fetch('/save_image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageData: dataURL, model_selction }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('inputImage').src = data.input_image + "?timestamp=" + new Date().getTime();
+                document.getElementById('outputImage').src = data.output_image + "?timestamp=" + new Date().getTime();
+            } else {
+                console.error('Fehler beim Speichern des Bildes:', await response.text());
+            }
+
+            saveButton.disabled = false;
+        });
+
+
+
+        // Load available transformation models
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch("/get_models").then(response => response.json()).then(models => {
+                const dropdown = document.getElementById("selectionDropdown");
+                dropdown.innerHTML = "";
+                models.forEach(model => {
+                    let option = document.createElement("option");
+                    option.value = model;
+                    option.textContent = model;
+                    dropdown.appendChild(option);
+                });
+            }).catch(error => console.error("Fehler beim Laden der Modelle:", error));
+        });
+    </script>
+</body>
+</html>
