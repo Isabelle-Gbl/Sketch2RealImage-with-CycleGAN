@@ -1,102 +1,134 @@
+"""
+QuickDraw Sketch Preprocessing for CycleGAN
+
+This script processes drawing data from the Google QuickDraw dataset, converting them into centered, high-contrast black-and-white images.
+The processed images are intended for training a CycleGAN model.
+
+## Requirements:
+1. Download the `.ndjson` files from https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/simplified (Google QuickDraw dataset). 
+   Here you can download a file from the quickdraw_dataset/full/simplified/ folder
+2. Place the `.ndjson` files in a subfolder within the `root_path`. The folder name should match the desired class (e.g., `"car"` for car sketches).
+
+## Usage:
+Run the script from the command line with the following parameters:
+
+    python script.py <class_name> <image_count> --root_path <root_path>
+
+### Parameters:
+- `<class_name>`: Name of the class folder (e.g., `"car"` for car sketches).
+- `<image_count>`: Number of images to process. (e.g. 4000, that is the amount of images that where used in the project.)
+- `--root_path`: (Optional) Path to the dataset directory. Defaults to `Orginal_CycleGAN_Repository/datasets`.
+
+### Example:
+    python script.py car 4000 --root_path /path/to/datasets
+
+This processes 4000 car sketches from `/path/to/datasets/car/*.ndjson` and saves the images in `/path/to/datasets/car/trainA`.
+
+## Output:
+- The generated images are saved in the `trainA` subfolder of the respective class.
+- The drawings are scaled, centered, contrast-enhanced, and converted to black-and-white.
+- The images are ready for use as training data for a CycleGAN model.
+"""
+
 import os
 import json
 import argparse
-from PIL import Image, ImageDraw, ImageOps, ImageEnhance
+from PIL import Image, ImageDraw, ImageEnhance
 
-def lade_zeichnungsdaten(pfad):
-    """Lädt Zeichnungen aus einer .ndjson-Datei."""
-    if not os.path.exists(pfad):
-        raise FileNotFoundError(f"Die Datei {pfad} wurde nicht gefunden.")
-    with open(pfad, 'r') as f:
-        return [json.loads(zeile) for zeile in f]
+def load_drawing_data(path):
+    """Loads drawings from an .ndjson file."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"File {path} not found.")
+    with open(path, 'r') as f:
+        return [json.loads(line) for line in f]
 
-def zeichnung_zu_bild(drawing, bildgroesse=(256, 256)):
-    """Erstellt ein zentriertes Bild aus einer Zeichnung."""
-    bild = Image.new("RGB", bildgroesse, "white")
-    zeichnung = ImageDraw.Draw(bild)
+def drawing_to_image(drawing, image_size=(256, 256)):
+    """Creates a centered image from a drawing."""
+    image = Image.new("RGB", image_size, "white")
+    draw = ImageDraw.Draw(image)
     
-    # Bestimme die Bounding Box der Zeichnung
-    min_x = min(min(pfad[0]) for pfad in drawing)
-    max_x = max(max(pfad[0]) for pfad in drawing)
-    min_y = min(min(pfad[1]) for pfad in drawing)
-    max_y = max(max(pfad[1]) for pfad in drawing)
+    # Determine the bounding box of the drawing
+    min_x = min(min(path[0]) for path in drawing)
+    max_x = max(max(path[0]) for path in drawing)
+    min_y = min(min(path[1]) for path in drawing)
+    max_y = max(max(path[1]) for path in drawing)
     
-    zeichnung_width = max_x - min_x
-    zeichnung_height = max_y - min_y
+    drawing_width = max_x - min_x
+    drawing_height = max_y - min_y
     
-    # Skaliere die Zeichnung auf die maximale Größe, ohne Verzerrung
-    scale = min((bildgroesse[0] - 10) / zeichnung_width, (bildgroesse[1] - 10) / zeichnung_height)
+    # Scale the drawing to fit the image without distortion
+    scale = min((image_size[0] - 10) / drawing_width, (image_size[1] - 10) / drawing_height)
     
-    # Berechne den Mittelpunkt der Zeichnung
-    x_mittelpunkt = (max_x + min_x) / 2
-    y_mittelpunkt = (max_y + min_y) / 2
+    # Calculate the center of the drawing
+    x_center = (max_x + min_x) / 2
+    y_center = (max_y + min_y) / 2
     
-    for pfad in drawing:
-        x_werte = [((x - x_mittelpunkt) * scale + bildgroesse[0] / 2) for x in pfad[0]]
-        y_werte = [((y - y_mittelpunkt) * scale + bildgroesse[1] / 2) for y in pfad[1]]
-        koordinaten = list(zip(x_werte, y_werte))
-        zeichnung.line(koordinaten, fill="black", width=2)
+    for path in drawing:
+        x_values = [((x - x_center) * scale + image_size[0] / 2) for x in path[0]]
+        y_values = [((y - y_center) * scale + image_size[1] / 2) for y in path[1]]
+        coordinates = list(zip(x_values, y_values))
+        draw.line(coordinates, fill="black", width=2)
     
-    # Zentriere die Zeichnung
-    bild = passe_bildgroesse_an(bild, bildgroesse)
-    return bild
+    # Center the drawing
+    image = adjust_image_size(image, image_size)
+    return image
 
-def passe_bildgroesse_an(bild, zielgroesse=(256, 256)):
-    """Skaliert die Zeichnung größtmöglich auf 256x256 ohne Verzerrung und zentriert sie."""
-    bild.thumbnail(zielgroesse, Image.Resampling.LANCZOS)
-    neues_bild = Image.new("RGB", zielgroesse, "white")
-    x_offset = (zielgroesse[0] - bild.size[0]) // 2
-    y_offset = (zielgroesse[1] - bild.size[1]) // 2
-    neues_bild.paste(bild, (x_offset, y_offset))
-    return neues_bild
+def adjust_image_size(image, target_size=(256, 256)):
+    """Scales the drawing to fit 256x256 without distortion and centers it."""
+    image.thumbnail(target_size, Image.Resampling.LANCZOS)
+    new_image = Image.new("RGB", target_size, "white")
+    x_offset = (target_size[0] - image.size[0]) // 2
+    y_offset = (target_size[1] - image.size[1]) // 2
+    new_image.paste(image, (x_offset, y_offset))
+    return new_image
 
-def konvertiere_in_schwarz_weiss(bild, schwellenwert=128):
-    """Konvertiert das Bild in Schwarz-Weiß."""
-    graustufen_bild = bild.convert("L")
-    return graustufen_bild.point(lambda p: 255 if p > schwellenwert else 0, mode="1")
+def convert_to_black_and_white(image, threshold=128):
+    """Converts the image to black and white."""
+    grayscale_image = image.convert("L")
+    return grayscale_image.point(lambda p: 255 if p > threshold else 0, mode="1")
 
-def erhoehe_kontrast(bild, faktor=2):
-    """Erhöht den Kontrast des Bildes."""
-    enhancer = ImageEnhance.Contrast(bild.convert("L"))
-    return enhancer.enhance(faktor)
+def enhance_contrast(image, factor=2):
+    """Enhances the contrast of the image."""
+    enhancer = ImageEnhance.Contrast(image.convert("L"))
+    return enhancer.enhance(factor)
 
-def speichere_zeichnungsbilder(daten, zielordner, anzahl_bilder, bildgroesse=(256, 256), schwellenwert=128, kontrastfaktor=2):
-    """Speichert die Zeichnungen als Bilder."""
-    os.makedirs(zielordner, exist_ok=True)
-    for i, eintrag in enumerate(daten[:anzahl_bilder]):
-        if "drawing" in eintrag:
-            dateiname = os.path.join(zielordner, f"bild_{i}.png")
-            bild = zeichnung_zu_bild(eintrag["drawing"], bildgroesse)
-            bild = konvertiere_in_schwarz_weiss(bild, schwellenwert)
-            bild = erhoehe_kontrast(bild, kontrastfaktor)
-            bild.save(dateiname)
+def save_drawing_images(data, target_folder, num_images, image_size=(256, 256), threshold=128, contrast_factor=2):
+    """Saves drawings as images."""
+    os.makedirs(target_folder, exist_ok=True)
+    for i, entry in enumerate(data[:num_images]):
+        if "drawing" in entry:
+            filename = os.path.join(target_folder, f"image_{i}.png")
+            image = drawing_to_image(entry["drawing"], image_size)
+            image = convert_to_black_and_white(image, threshold)
+            image = enhance_contrast(image, contrast_factor)
+            image.save(filename)
 
-def verarbeite_ndjson(motiv_name, image_count, root_path):
-    """Verarbeitet eine .ndjson-Datei und speichert die Bilder."""
-    ndjson_ordner = os.path.join(root_path, motiv_name)
-    ndjson_dateien = [f for f in os.listdir(ndjson_ordner) if f.endswith(".ndjson")]
+def process_ndjson(motif_name, image_count, root_path):
+    """Processes an .ndjson file and saves the images."""
+    ndjson_folder = os.path.join(root_path, motif_name)
+    ndjson_files = [f for f in os.listdir(ndjson_folder) if f.endswith(".ndjson")]
     
-    if not ndjson_dateien:
-        print(f"Keine .ndjson-Datei für {motiv_name} gefunden.")
+    if not ndjson_files:
+        print(f"No .ndjson file found for {motif_name}.")
         return
     
-    ndjson_pfad = os.path.join(ndjson_ordner, ndjson_dateien[0])
-    zielordner = os.path.join(root_path, motiv_name, "trainA")
+    ndjson_path = os.path.join(ndjson_folder, ndjson_files[0])
+    target_folder = os.path.join(root_path, motif_name, "trainA")
     
     try:
-        daten = lade_zeichnungsdaten(ndjson_pfad)
+        data = load_drawing_data(ndjson_path)
     except FileNotFoundError as e:
         print(e)
         return
     
-    speichere_zeichnungsbilder(daten, zielordner, image_count)
-    print(f"Bilder für {motiv_name} wurden in {zielordner} gespeichert.")
+    save_drawing_images(data, target_folder, image_count)
+    print(f"Images for {motif_name} saved in {target_folder}.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Konvertiert Zeichnungen aus einer .ndjson-Datei in Bilder für CycleGAN.")
-    parser.add_argument("motiv_name", type=str, help="Name des Motiv-Ordners")
-    parser.add_argument("image_count", type=int, help="Anzahl der zu verarbeitenden Bilder")
-    parser.add_argument("--root_path", type=str, default="Orginal_CycleGAN_Repository/datasets", help="Pfad zum Hauptverzeichnis der Daten")
+    parser = argparse.ArgumentParser(description="Converts drawings from an .ndjson file into images for CycleGAN.")
+    parser.add_argument("motif_name", type=str, help="Name of the motif folder")
+    parser.add_argument("image_count", type=int, help="Number of images to process")
+    parser.add_argument("--root_path", type=str, default="Orginal_CycleGAN_Repository/datasets", help="Path to the main data directory")
 
     args = parser.parse_args()
-    verarbeite_ndjson(args.motiv_name, args.image_count, args.root_path)
+    process_ndjson(args.motif_name, args.image_count, args.root_path)
