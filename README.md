@@ -47,11 +47,16 @@ Then open `http://localhost:8097` in a browser to visualize training progress.
 ### Running the training script
 Use the following command to train the model on your dataset:
 ```bash
+python train.py --dataroot ./datasets/<class_name> --name <individual> --model cycle_gan
+```
+Example:
+```bash
 python train.py --dataroot ./datasets/car --name car_cyclegan --model cycle_gan
 ```
+
 If your system does not have CUDA support, run:
 ```bash
-python train.py --dataroot ./datasets/car --name car_cyclegan --model cycle_gan --gpu_ids -1
+python train.py --dataroot ./datasets/<class_name> --name car_cyclegan --model cycle_gan --gpu_ids -1
 ```
 This will use the CPU instead, though training will be significantly slower.
 
@@ -59,9 +64,14 @@ This will use the CPU instead, though training will be significantly slower.
 ### Evaluating Models
 After training, you may want to compare different versions of the model to see which performs best. You can evaluate a model using the following command:
 ```bash
+python evaluate.py <class_name> <A or B> car_cyclegan <G_A or G_B>
+```
+
+Example:
+```bash
 python evaluate.py car A car_cyclegan G_A
 ```
-This applies different generator checkpoints to images in testA to see how well they generalize.
+This example would use all G_A generators in the checkpoint folder car_cyclegan to transform each image of the folder testA in the car folder. You would find the result in the submodul folder in results/car_cyclegan.
 
 ## Web Application (Flask Sketch Pad)
 This repository includes a Flask-based web application that allows you to interact with trained models by drawing sketches and converting them into realistic images.
