@@ -11,7 +11,7 @@ This repository provides the necessary setup and tools to utilize a CycleGAN mod
   <img src="https://github.com/user-attachments/assets/c81968d6-74ef-46bc-98b7-4bcfd6e62173" width="800">
 </picture>
 
-CycleGAN is a type of Generative Adversarial Network (GAN) that enables image-to-image translation without requiring paired training data. This makes it useful for transforming hand-drawn sketches into realistic images, even when exact input-output pairs are not available.
+CycleGAN is a type of Generative Adversarial Network (GAN) that enables image-to-image translation without requiring paired training data. This makes it useful for transforming hand-drawn sketches into realistic images, even when exact input-output pairs are not available. The model itself is just used from the pytorch-CycleGAN-and-pix2pix Repository that is linked as Submodule for this Repository.
 
 ## Features
 - Provides an easy-to-use setup for applying CycleGAN to sketch-to-real image translation.
@@ -68,6 +68,12 @@ python train.py --dataroot ./datasets/<class_name> --name car_cyclegan --model c
 ```
 This will use the CPU instead, though training will be significantly slower.
 
+If you have any questions regarding the model, you can also check the original pytorch-CycleGAN-and-pix2pix repository which already has clarified a lot of questions.
+However there is a python file in this repository, the `cycle_gan_model.py` with which you can replace the existing file in the folder `Orginal_CycleGAN_Repository/models`.
+It provides some additions for this specific project, like:
+- converting sketches to black and white only to prevent model from producing noise in the fake_A class
+- preparing a function for salt and pepper noise
+- and a less frequent update of the Discriminator B loss, to prevent it from decrease too fast.
 
 ### Evaluating Models
 After training, you may want to compare different versions of the model to see which performs best. You can evaluate a model using the following command:
