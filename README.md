@@ -22,7 +22,7 @@ git submodule update --init --recursive
 ```
 
 ## Adding a Sketch Dataset
-To train the model, you need a dataset of sketches. A good option is the [Google QuickDraw dataset](https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/simplified), which contains thousands of categorized sketches.
+To train the model, you need a dataset of sketches. A good option is the [Google QuickDraw dataset](https://console.cloud.google.com/storage/browser/quickdraw_dataset/full/simplified), which contains thousands of categorized sketches. This is only for the class "A", you will have to prepare a dataset for the real images class "B" by yourself.
 
 ### Steps to add the dataset:
 1. **Download the `.ndjson` files** from the QuickDraw dataset (Google account required).
