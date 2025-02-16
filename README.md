@@ -1,4 +1,6 @@
 # CycleGAN: Sketch-to-Real Image Translation
+![image](https://github.com/user-attachments/assets/3e45dd0c-5053-4501-8f1b-6b1d3a04a12f)
+
 
 ## Overview
 This repository provides the necessary setup and tools to utilize a CycleGAN model for converting sketches into realistic images. The actual CycleGAN implementation is included as a submodule, while this repository focuses on its application, usage, and insights gained from working with it.
