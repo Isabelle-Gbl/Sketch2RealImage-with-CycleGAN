@@ -47,7 +47,7 @@ Then open `http://localhost:8097` in a browser to visualize training progress.
 ### Running the training script
 Use the following command to train the model on your dataset:
 ```bash
-python train.py --dataroot ./datasets/<class_name> --name <individual> --model cycle_gan
+python train.py --dataroot ./datasets/<class_name> --name <your_project_name> --model cycle_gan
 ```
 Example:
 ```bash
