@@ -76,6 +76,8 @@ This example would use all G_A generators in the checkpoint folder car_cyclegan 
 ## Web Application (Flask Sketch Pad)
 This repository includes a Flask-based web application that allows you to interact with trained models by drawing sketches and converting them into realistic images.
 
+![Sketchpad](https://github.com/user-attachments/assets/279edd77-d87d-4cef-9055-e8d2ae6293fa)
+
 ### Setup
 To use the web app:
 1. Move trained models to `interaction/models`. You have to create the folder called "models". Make sure the model filenames end with `_net_G.pth`.
