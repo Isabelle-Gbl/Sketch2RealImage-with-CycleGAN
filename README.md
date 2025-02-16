@@ -1,11 +1,18 @@
 # CycleGAN: Sketch-to-Real Image Translation
+
+
+
 <picture>
-  <img src="https://github.com/user-attachments/assets/3e45dd0c-5053-4501-8f1b-6b1d3a04a12f" width="800">
+  <img src="[https://github.com/user-attachments/assets/0d2052e8-4028-4584-94e1-2c5b4dc06d5d]" width="800">
 </picture>
 
 
 ## Overview
 This repository provides the necessary setup and tools to utilize a CycleGAN model for converting sketches into realistic images. The actual CycleGAN implementation is included as a submodule, while this repository focuses on its application, usage, and insights gained from working with it.
+
+<picture>
+  <img src="https://github.com/user-attachments/assets/3e45dd0c-5053-4501-8f1b-6b1d3a04a12f" width="800">
+</picture>
 
 CycleGAN is a type of Generative Adversarial Network (GAN) that enables image-to-image translation without requiring paired training data. This makes it useful for transforming hand-drawn sketches into realistic images, even when exact input-output pairs are not available.
 
