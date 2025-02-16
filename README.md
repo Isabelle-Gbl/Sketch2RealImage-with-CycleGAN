@@ -94,7 +94,7 @@ To use the web app:
 python app.py
 ```
 3. Open `http://localhost:5000/` in a browser.
-4. Select a model from the dropdown menu, draw on the canvas, and click "Transform" to generate images
+4. Select a model from the dropdown menu, draw on the canvas, and click "Save and Transform" to generate images
 
 ### Notes on Model Selection
 - The models in interaction/models should be named clearly (e.g., car_net_G.pth, butterfly_net_G.pth).
