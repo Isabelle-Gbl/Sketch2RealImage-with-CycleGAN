@@ -168,8 +168,6 @@ class CycleGANModel(BaseModel):
         
         return noisy_image
 
-
-
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         self.real_A = self.convert_to_black_white(self.real_A,0.03) # ensures sketches are only black(-1) and white (1); Added for the sketch to real image project
