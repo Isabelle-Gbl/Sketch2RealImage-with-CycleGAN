@@ -68,7 +68,7 @@ This repository includes a Flask-based web application that allows you to intera
 
 ### Setup
 To use the web app:
-1. Move trained models to `interaction/models`. Make sure the filenames end with `_net_G.pth`.
+1. Move trained models to `interaction/models`. You have to create the folder called "models". Make sure the model filenames end with `_net_G.pth`.
 2. Start the application:
 ```bash
 python app.py
