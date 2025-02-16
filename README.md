@@ -1,5 +1,7 @@
 # CycleGAN: Sketch-to-Real Image Translation
-![image](https://github.com/user-attachments/assets/3e45dd0c-5053-4501-8f1b-6b1d3a04a12f)
+<picture>
+  <img src="https://github.com/user-attachments/assets/3e45dd0c-5053-4501-8f1b-6b1d3a04a12f" width="400">
+</picture>
 
 
 ## Overview
