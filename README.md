@@ -78,7 +78,7 @@ It provides some additions for this specific project, like:
 ### Evaluating Models
 After training, you may want to compare different versions of the model to see which performs best. You can evaluate a model using the following command:
 ```bash
-python evaluate.py <class_name> <A or B> car_cyclegan <G_A or G_B>
+python evaluate.py <class_name> <A or B> <model_name> <G_A or G_B>
 ```
 
 Example:
